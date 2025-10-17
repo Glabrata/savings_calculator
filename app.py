@@ -2,10 +2,10 @@ import streamlit as st
 import importlib
 import traceback
 
-st.set_page_config(page_title="PV & Battery Calculator", layout="wide")
-st.title("PV & Battery Calculator - interactive")
+st.set_page_config(page_title="Electricity bill and PV Calculator", layout="wide")
+st.title("Electricity bill with and without solar panels - interactive")
 
-st.markdown("Provide yearly PV production and yearly consumption, then run the calculator and show the summary table from `calculator_git.py`.")
+st.markdown("Provide yearly solar panel production and yearly consumption, then run the calculator and show the summary table.")
 
 # Import calculator module to read defaults
 try:
