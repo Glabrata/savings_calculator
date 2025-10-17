@@ -5,7 +5,7 @@ import traceback
 st.set_page_config(page_title="Electricity bill and PV Calculator", layout="wide")
 st.title("Electricity bill with and without solar panels - interactive")
 
-st.markdown("Provide yearly solar panel production and yearly consumption, then run the calculator and show the summary table.")
+st.markdown("Provide yearly solar panel production and yearly consumption, then run the calculator to show the summary table.")
 
 # Import calculator module to read defaults
 try:
@@ -71,4 +71,5 @@ else:
 
 st.markdown("---")
 st.markdown("Notes: This app reloads `calculator_git.py` when you press Run. Ensure `calculator_git.py` reads `yearly_pv_production` and `yearly_consumption` as global variables at import time and produces a `summary` pandas DataFrame.")
+
 
