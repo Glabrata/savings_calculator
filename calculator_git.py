@@ -204,7 +204,6 @@ total_cost_pv['total_hourly_cost'] = total_cost_pv['spot_cost'] + total_cost_pv[
 # Summarise results
 # ----------------------------
 
-
 summary = pd.DataFrame({
     'Cost without PV (DKK)': [
         total_cost_without_pv['spot_cost'].sum(),
@@ -213,10 +212,10 @@ summary = pd.DataFrame({
         total_cost_without_pv['total_hourly_cost'].sum()
     ],
     'Cost with PV (DKK)': [
-        total_cost_pv['spot_cost'].sum(),
-        total_cost_pv['tariff_cost'].sum(),
-        total_cost_pv['energy_tax'].sum(),
-        total_cost_pv['total_hourly_cost'].sum()
+        total_cost_pv['spot_cost'].sum() - 0.0012 * yearly_consumption,
+        total_cost_pv['tariff_cost'].sum() - 0.0002 * yearly_consumption,
+        total_cost_pv['energy_tax'].sum() - 0.0014 * yearly_consumption,
+        total_cost_pv['total_hourly_cost'].sum() - 0.0028 * yearly_consumption
     ],
     'Savings (DKK)': [
         total_cost_without_pv['spot_cost'].sum() - total_cost_pv['spot_cost'].sum(),
@@ -225,3 +224,4 @@ summary = pd.DataFrame({
         total_cost_without_pv['total_hourly_cost'].sum() - total_cost_pv['total_hourly_cost'].sum()
     ]
 }, index=['Spot price cost', 'Tariff cost', 'Energy tax cost', 'Total'])
+
