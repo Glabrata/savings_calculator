@@ -123,8 +123,6 @@ total_cost_without_pv['total_hourly_cost'] = total_cost_without_pv['spot_cost'] 
 # Calculate electricity cost WITH PV
 # ---------------------------
 
-# Set annual PV production in kWh
-yearly_pv_production = globals().get('yearly_pv_production', 6000)
 # Set annual PV production in kWh (allow override from external caller/app)
 yearly_pv_production = globals().get('yearly_pv_production', 6000)
 
@@ -320,6 +318,7 @@ summary = pd.DataFrame({
 # # Example usage:
 # battery_simulation = simulate_battery_operation_daily(merged_spot)
 # print(battery_simulation[['Date', 'Hour', 'DKK/kWh', 'Consumption kWh', 'battery_action', 'battery_state']].head(48))
+
 
 
 
