@@ -7,7 +7,7 @@ import numpy as np
 
 
 # Define yearly consumption in kWh
-yearly_consumption = 10000
+yearly_consumption = globals().get('yearly_consumption', 10000)
 
 # Get hourly use coeficients with group by month and hour
 hourly_coef = pd.read_csv('data/hourly_coef.csv')
@@ -124,7 +124,7 @@ total_cost_without_pv['total_hourly_cost'] = total_cost_without_pv['spot_cost'] 
 # ---------------------------
 
 # Set annual PV production in kWh
-yearly_pv_production = 6000
+yearly_pv_production = globals().get('yearly_pv_production', 6000)
 
 # Calculate the production monthly coeficiets
 monthly_production['monthly_coef'] = monthly_production['Avg daily production'] / monthly_production['Avg daily production'].sum()
@@ -318,6 +318,7 @@ summary = pd.DataFrame({
 # # Example usage:
 # battery_simulation = simulate_battery_operation_daily(merged_spot)
 # print(battery_simulation[['Date', 'Hour', 'DKK/kWh', 'Consumption kWh', 'battery_action', 'battery_state']].head(48))
+
 
 
 
