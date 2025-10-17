@@ -224,7 +224,8 @@ summary = pd.DataFrame({
         total_cost_without_pv['total_hourly_cost'].sum() - total_cost_pv['total_hourly_cost'].sum() + 0.0028 * yearly_consumption
     ]
 }, index=['Spot price cost', 'Tariff cost', 'Energy tax cost', 'Total']).round(0)
-summary = summary.pd.options.display.float_format = '{:,}'.format
+summary = summary.style.format("{:,.0f}")
+
 
 
 
