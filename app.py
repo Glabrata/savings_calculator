@@ -11,8 +11,9 @@ st.markdown("Provide yearly PV production and yearly consumption, then run the c
 try:
     import calculator_git
     importlib.reload(calculator_git)
-except Exception:
-    calculator_git = None
+except Exception as e:
+    st.error(f"Import error in calculator_git.py: {e}")
+    st.text(traceback.format_exc())
 
 # Get defaults if available
 default_pv = None
@@ -70,3 +71,4 @@ else:
 
 st.markdown("---")
 st.markdown("Notes: This app reloads `calculator_git.py` when you press Run. Ensure `calculator_git.py` reads `yearly_pv_production` and `yearly_consumption` as global variables at import time and produces a `summary` pandas DataFrame.")
+
