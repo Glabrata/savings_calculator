@@ -9,17 +9,17 @@ st.markdown("Provide yearly PV production and yearly consumption, then run the c
 
 # Import calculator module to read defaults
 try:
-    import calculator_git as calculator
-    importlib.reload(calculator)
+    import calculator_git
+    importlib.reload(calculator_git)
 except Exception:
-    calculator = None
+    calculator_git = None
 
 # Get defaults if available
 default_pv = None
 default_consumption = None
-if calculator is not None:
-    default_pv = getattr(calculator, 'yearly_pv_production', None)
-    default_consumption = getattr(calculator, 'yearly_consumption', None)
+if calculator_git is not None:
+    default_pv = getattr(calculator_git, 'yearly_pv_production', None)
+    default_consumption = getattr(calculator_git, 'yearly_consumption', None)
 
 col1, col2 = st.columns(2)
 with col1:
@@ -40,19 +40,19 @@ with col2:
 run = st.button("Run calculation")
 
 if run:
-    if calculator is None:
+    if calculator_git is None:
         st.error("Unable to import calculator.py. Fix errors in that file first.")
     else:
         # Inject values and reload module
         try:
             # Set attributes on the module so code can pick them up at import
-            setattr(calculator, 'yearly_pv_production', yearly_pv_production)
-            setattr(calculator, 'yearly_consumption', yearly_consumption)
+            setattr(calculator_git, 'yearly_pv_production', yearly_pv_production)
+            setattr(calculator_git, 'yearly_consumption', yearly_consumption)
             # Reload the module to re-run top-level calculations using new values
-            importlib.reload(calculator)
+            importlib.reload(calculator_git)
 
             # Retrieve the summary dataframe
-            summary = getattr(calculator, 'summary', None)
+            summary = getattr(calculator_git, 'summary', None)
             if summary is None:
                 st.error("`summary` not found in calculator.py after reload. Make sure the script defines `summary` as a pandas DataFrame.")
             else:
