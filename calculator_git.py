@@ -7,42 +7,10 @@ import numpy as np
 
 
 # Define yearly consumption in kWh
-yearly_consumption = 14500
+yearly_consumption = 10000
 
-# Loading consumption from average use and yearly consumption.
-consumption_coef = pd.read_csv('data/ConsumptionIndustry.csv', sep =';')
-consumption_coef = consumption_coef.drop(['Branche', 'HourUTC'], axis=1)
-# Replace all values of "," with "." in column 'ConsumptionkWh'
-consumption_coef['ConsumptionkWh'] = consumption_coef['ConsumptionkWh'].str.replace(",", ".", case=False, 
-                                                                                    regex=False)
-consumption_coef = consumption_coef.astype({'ConsumptionkWh': 'float64'})
-consumption_coef[['Date', 'Hour']] = consumption_coef['HourDK'].str.split(' ',expand=True)
-consumption_coef  = consumption_coef.drop(['HourDK', 'MunicipalityNo'], axis=1)
-consumption_coef['Date'] = pd.to_datetime(consumption_coef['Date'], errors='coerce')
-consumption_coef['Month'] = consumption_coef['Date'].dt.strftime('%B')
-consumption_coef['Week_day'] = consumption_coef['Date'].dt.day_name()
-consumption_coef['Hour'] = pd.to_datetime(consumption_coef['Hour'], errors='coerce').dt.strftime('%H:%M')
-consumption_coef['Date'] = pd.to_datetime(consumption_coef['Date'], errors='coerce')
-consumption_coef['Day'] = consumption_coef['Date'].dt.day
-consumption_coef['Date'] = consumption_coef['Date'].dt.date
-
-# Add season column based on month
-def get_season(month):
-    if month in [10, 11, 12, 1, 2, 3]:
-        return 'winter'
-    else:
-        return 'summer'
-consumption_coef['season'] = consumption_coef['Date'].apply(lambda d: get_season(d.month))
-consumption_coef['Month'] = pd.to_datetime(consumption_coef['Date']).dt.strftime('%B')
-
-# get hourly use coeficients with group by month and hour
-hourly_coef = consumption_coef.groupby(['Date', 'Month', 'Day', 'Hour', 'season', 'Week_day'])['ConsumptionkWh'].mean().reset_index()
-
-# Calculate the sum per month
-#monthly_sum = hourly_coef.groupby('Month')['ConsumptionkWh'].transform('sum')
-
-# Calculate the coefficient per hour, per month
-hourly_coef['coef'] = hourly_coef['ConsumptionkWh'] / hourly_coef['ConsumptionkWh'].sum()
+# Get hourly use coeficients with group by month and hour
+hourly_coef = pd.read_csv('data/hourly_coef.csv')
 
 # Calculate the consumption per hour based on yearly consumption and coeficients
 hourly_use = hourly_coef[['Month', 'Hour']]
@@ -51,8 +19,9 @@ hourly_use = hourly_use.groupby(['Month', 'Hour'])['ConsumptionkWh'].sum().reset
 
 # Real consumption data
 real_consumption = pd.merge(hourly_use, hourly_coef, how = 'right', on=['Month', 'Hour'])
-real_consumption.drop(['ConsumptionkWh_y', 'coef'], axis=1, inplace=True)
+real_consumption.drop(['coef'], axis=1, inplace=True)
 real_consumption = real_consumption.rename({'ConsumptionkWh_x': 'ConsumptionkWh'}, axis=1)
+real_consumption['Date'] = pd.to_datetime(real_consumption['Date'], errors='coerce').dt.date
 
 # Load spot prices
 spot = pd.read_csv('data/spot_prices.csv', sep=';')
@@ -70,7 +39,7 @@ spot = spot.drop(['HourDK', 'SpotPriceDKK'], axis=1)
 spot['Date'] = pd.to_datetime(spot['Date'], errors='coerce')
 spot['Month'] = spot['Date'].dt.strftime('%B')
 spot['Date'] = spot['Date'].dt.date
-
+spot['Date'] = pd.to_datetime(spot['Date'], errors='coerce').dt.date
 
 # Define VAT in Denmark (25%)
 vat = 1.25
@@ -115,7 +84,10 @@ production_coef['Hour'] = pd.to_datetime(production_coef['Hour'], errors='coerce
 
 
 # Calculate cost of spot prices
-total_cost_spot = pd.merge(real_consumption, spot, how='inner', on=['Date', 'Month', 'Hour'])
+total_cost_spot = pd.merge(real_consumption[['Date', 'Hour', 'ConsumptionkWh']], 
+                           spot[['Date','Hour','DKK/kWh']], 
+                           how='inner', 
+                           on=['Date', 'Hour'])
 total_cost_spot['spot_cost'] = total_cost_spot['ConsumptionkWh'] * total_cost_spot['DKK/kWh'] * vat
 # total_cost_spot['spot_cost'].sum()
 
@@ -124,7 +96,10 @@ total_cost_spot['spot_cost'] = total_cost_spot['ConsumptionkWh'] * total_cost_sp
 # print(spot[duplicates])
 
 # Calculate cost of tariffs
-total_cost_tariff = pd.merge(real_consumption, all_tariffs, how='inner', on=['Week_day', 'Hour', 'season'])
+total_cost_tariff = pd.merge(real_consumption[['Date', 'Month', 'Week_day', 'Hour', 'ConsumptionkWh', 'season']], 
+                             all_tariffs, 
+                             how='left', 
+                             on=['Week_day', 'Hour', 'season'])
 total_cost_tariff['tariffs_cost'] = total_cost_tariff['ConsumptionkWh'] * total_cost_tariff['Tariff']
 # total_cost_tariff['tariffs_cost'].sum()
 
@@ -177,8 +152,14 @@ export_price = spot[['Date', 'Hour', 'DKK/kWh']]
 export_price['export_price'] = export_price['DKK/kWh'] * (1/vat)
 
 # Merge spot prices with balance
-merged_spot_pv_cost = pd.merge(balance, spot, how='right', on=['Hour', 'Month'])
-merged_spot_pv_cost = pd.merge(merged_spot_pv_cost, export_price[['Date', 'Hour', 'export_price']], how='left', on=['Date', 'Hour'])
+merged_spot_pv_cost = pd.merge(balance, 
+                               spot, 
+                               how='right', 
+                               on=['Hour', 'Month'])
+merged_spot_pv_cost = pd.merge(merged_spot_pv_cost, 
+                               export_price[['Date', 'Hour', 'export_price']], 
+                               how='left', 
+                               on=['Date', 'Hour'])
 
 # Calculate spot price cost after PV production
 spot_pv_cost = merged_spot_pv_cost[['Date', 'Hour', 'balance', 'DKK/kWh', 'export_price']]
@@ -193,9 +174,10 @@ energy_tax_cost_pv['energy_tax'] = np.where(energy_tax_cost_pv['balance'] >= 0,
                                         0)
 
 # Calculate tariffs cost after PV production
-merged_tariffs_pv_cost = pd.merge(consumption_coef, all_tariffs, how='left', on=['Hour', 'Week_day', 'season'])
-merged_tariffs_pv_cost = merged_tariffs_pv_cost.groupby(['Date', 'Month', 'Hour', 'season', 'Week_day'])['Tariff'].mean().reset_index()
-tariffs_pv_cost = merged_tariffs_pv_cost[['Date', 'Month', 'Hour', 'Tariff']]
+tariffs_pv_cost = pd.merge(real_consumption[['Date', 'season', 'Month', 'Week_day', 'Hour', 'ConsumptionkWh']], 
+                           all_tariffs,
+                           how='left', 
+                           on=['Hour', 'Week_day', 'season'])
 tariffs_pv_cost = pd.merge(tariffs_pv_cost, balance[['Month', 'Hour', 'balance']], how='left', on=['Month', 'Hour'])
 tariffs_pv_cost['tariff_cost'] = np.where(tariffs_pv_cost['balance'] > 0,
                                       tariffs_pv_cost['balance'] * tariffs_pv_cost['Tariff'],
